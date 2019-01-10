@@ -5134,8 +5134,23 @@ findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint
 
 state.instrres_mode = 0
 
-case strlowcase(state.instr) of
-    'kmos': begin 
+case 1 of
+   strlowcase(state.instr) eq 'kmos3d': begin 
+	;Resolution keyword must be present in the primary header of K3D products from the official release
+	prihead = headfits(state.indir+state.filename, exten=0)
+        resorder = kubeviz_fxpar_sp(prihead, 'K3D RES ORDER', /HIER)
+	if resorder gt 0 then begin
+	   ; Print the following message only once
+	   if total(state.instrres_extpoly) eq 0 then printf, state.log_lun, '[KUBEVIZ] Instrumental resolution coefficients extracted from the primary header.'
+           ; convert coefficients to work with Angstroms rather than microns:
+	   for i=0, resorder do state.instrres_extpoly[i]= kubeviz_fxpar_sp(prihead, 'K3D RES COEFF'+kubeviz_str(i), /HIER)*(1.e-4)^i
+	   state.instrres_mode = 1
+        endif else begin
+	  print, '[WARNING] Polynomial resolution coefficients must be present in the primary header of the official KMOS3D cubes'
+	  return
+	endelse  
+   end
+   strlowcase(state.instr) eq 'kmos': begin 
         ; First try and find the resolution coefficients in the primary header of the science file
 	; TODO update to V2 keywords
 	prihead = headfits(state.indir+state.filename, exten=0)
@@ -5170,7 +5185,7 @@ case strlowcase(state.instr) of
 	    endif
 	endelse 
     end
-    'sinfoni': begin ; use OH_GaussProf templates if available
+    strlowcase(state.instr) eq 'sinfoni': begin ; use OH_GaussProf templates if available
         case strupcase(state.band) of
             'J' : begin
 	          if state.pixscale eq 250 then instr_res_file = kubeviz_dir+'templates/sinfoni/OH_GaussProf_j250.fits' $
@@ -5215,7 +5230,7 @@ case strlowcase(state.instr) of
 	  kubeviz_linefit_skylines
 	endelse
     end
-    'muse': begin 
+    strlowcase(state.instr) eq 'muse': begin 
       if total(state.instrres_extpoly) eq 0 then printf, state.log_lun, '[KUBEVIZ] Instrumental resolution obtained from the MUSE manual (Figure 11)'
       state.instrres_extpoly[0]=499.446
       state.instrres_extpoly[1]=-0.201608
@@ -5224,7 +5239,7 @@ case strlowcase(state.instr) of
       state.instrres_extpoly[4]=0
       state.instrres_mode = 1
     end
-    'vimos': begin
+    strlowcase(state.instr) eq 'vimos': begin
        printf, state.log_lun, '[ DEBUG ] Instrumental resolution is not properly implemented'
        printf, state.log_lun, '[KUBEVIZ] Please input the coefficients manually.'    
        ;QUICK FIX for VIMOS data  -- TODO handle different grisms
@@ -5237,7 +5252,7 @@ case strlowcase(state.instr) of
       
        state.instrres_mode = 1
     end
-    'sami': begin
+    strlowcase(state.instr) eq 'sami': begin
        printf, state.log_lun, '[ DEBUG ] Instrumental resolution is not properly implemented'
        printf, state.log_lun, '[KUBEVIZ] Please input the coefficients manually.'    
        ;QUICK FIX for red grism
@@ -5249,7 +5264,7 @@ case strlowcase(state.instr) of
        state.instrres_extpoly[4]=0.
        state.instrres_mode = 1
     end
-    'wifes': begin
+    strlowcase(state.instr) eq 'wifes': begin
           case strupcase(state.band) of
             'B': state.instrres_extpoly[0]=3000.
 	    'R': state.instrres_extpoly[0]=7000.
@@ -6611,10 +6626,10 @@ instrres_row1 = widget_base(instrresbase, /row)
 dummy = widget_label(instrres_row1, value='Compute Instrumental Resolution: ')
 button = widget_button(instrres_row1, value='FIT TO VARIANCE', uvalue='FITSKY', tooltip='Fit to lines in variance spectrum')
 findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint 
-case state.instr of
- 'kmos'    : button = widget_button(instrres_row1, value='USE POLYNOMIAL', uvalue='POLYSKY', $
+case 1 of
+ (state.instr eq 'kmos') or (state.instr eq 'kmos3d') : button = widget_button(instrres_row1, value='USE POLYNOMIAL', uvalue='POLYSKY', $
                               tooltip='Use value from polynomial')
- 'sinfoni' : button = widget_button(instrres_row1, value='USE TEMPLATES', uvalue='TPLSKY', $
+ state.instr eq 'sinfoni' : button = widget_button(instrres_row1, value='USE TEMPLATES', uvalue='TPLSKY', $
                               tooltip='Fit to instrument templates', $ 
 			      sensitive=file_test(kubeviz_dir+'templates/sinfoni/OH_GaussProf*.fits'))
  else:       button = widget_button(instrres_row1, value='USE TEMPLATES', uvalue='TPLSKY', $
@@ -10227,6 +10242,12 @@ fits_open, noisedir+noisefile, fcbnoi
 prihead = headfits(dir+datafile, exten=0)
 if strlen(state.instr) eq 0 then begin
   case 1 of 
+   strtrim(fxpar(prihead, 'INSTRUME'),2) eq 'KMOS' and strtrim(fxpar(prihead, 'VERSION'),2) gt 0 : begin
+      state.instr='kmos3d'
+      state.vacuum = 1
+      printf, state.log_lun, '[KUBEVIZ] Detected instrument: KMOS'
+      printf, state.log_lun, '[KUBEVIZ] Detected data product from KMOS3D data release'+string(fxpar(prihead, 'VERSION'), format='(F4.1)')
+   end
    strtrim(fxpar(prihead, 'INSTRUME'),2) eq 'KMOS': begin
       state.instr='kmos'
       state.vacuum = 1
@@ -10260,6 +10281,10 @@ endif else state.instr = strlowcase(state.instr)
 if state.instr eq 'wifes' then begin
   ext=0
   noise_ext=1
+endif
+if state.instr eq 'kmos3d' then begin
+  ext=1
+  noise_ext=2
 endif
 
 if n_elements(ext) eq 0 then begin 
@@ -10325,7 +10350,21 @@ endcase
 
 
 case state.instr of 
-   'kmos': begin
+   'kmos3d': begin
+      
+      if state.band eq '' then begin
+        state.band = strtrim(kubeviz_fxpar_sp(prihead, 'OBSBAND'),2)
+        printf, state.log_lun, '[KUBEVIZ] Detected band: ', state.band 
+      endif 
+
+      state.ifu = -1 
+      
+      if state.fluxfac eq 1 then begin
+           state.fluxfac=0.1 ; 1e3 (erg/cm^2)/(W/m^2) * 1e-4 Angstrom/micron
+           printf, state.log_lun, '[KUBEVIZ] Input unit: 1E-17 W/m^2/um -> Output unit: 1E-17 erg/cm^2/s/A '
+      endif
+    end
+    'kmos': begin
       
       if state.band eq '' then begin
         state.band = strtrim(kubeviz_fxpar_sp(prihead, 'INS.FILT1.NAME',/HIER),2)
