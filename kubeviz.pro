@@ -17,9 +17,7 @@
 ; 
 ; VERSION: 2.3
 ; 
-; RELEASE: ??-01-2019
-;
-; AUTHORS: David Wilman, Matteo Fossati, & Joris Gerssen
+; AUTHORS: David J. Wilman, Matteo Fossati, & Joris Gerssen
 ; 
 ; PURPOSE: Interactively examine a FITS datacube (x,y,lambda).
 ;          kubeviz also provides interactive functionality to fit emission lines 
@@ -1569,7 +1567,7 @@ common kubeviz_state
 printf, state.log_lun, '[KUBEVIZ] Computing the polynomial coefficients for the instrumental resolution.'
 printf, state.log_lun, '[KUBEVIZ] This might take a few minutes, but will only happen once..'
 
-findpro, 'kubeviz_trial', dirlist=kubeviz_dir, /noprint 
+findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint 
 
 ohspec_file = kubeviz_dir[0]+'/templates/ohspec/kmos_oh_spec.fits'
 
@@ -5132,7 +5130,7 @@ pro kubeviz_instrres_init
 ; initialize the instrumental resolution values
 common kubeviz_state, state
 
-findpro, 'kubeviz_trial', dirlist=kubeviz_dir, /noprint 
+findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint 
 
 state.instrres_mode = 0
 
@@ -6612,7 +6610,7 @@ instrresbase = widget_base(base5, /col, frame=1)
 instrres_row1 = widget_base(instrresbase, /row)
 dummy = widget_label(instrres_row1, value='Compute Instrumental Resolution: ')
 button = widget_button(instrres_row1, value='FIT TO VARIANCE', uvalue='FITSKY', tooltip='Fit to lines in variance spectrum')
-findpro, 'kubeviz_trial', dirlist=kubeviz_dir, /noprint 
+findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint 
 case state.instr of
  'kmos'    : button = widget_button(instrres_row1, value='USE POLYNOMIAL', uvalue='POLYSKY', $
                               tooltip='Use value from polynomial')
@@ -11842,7 +11840,7 @@ if (not (xregistered('kubeviz_help_whatisnew', /noshow))) then begin
 helpnewbase = widget_base(group_leader = widgetids.base1, /column, $
                         /base_align_right, uvalue = 'help_instrbase')
 
-findpro, 'kubeviz_trial', dirlist=kubeviz_dir, /noprint 
+findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint 
 whatisnew_file = kubeviz_dir[0]+'doc/whatsnew.txt'
 
 h = 'Kubeviz version: ' + state.version
@@ -11876,7 +11874,7 @@ if (not (xregistered('kubeviz_help_instructions', /noshow))) then begin
 helpinstrbase = widget_base(group_leader = widgetids.base1, /column, $
                         /base_align_right, uvalue = 'help_instrbase')
 
-findpro, 'kubeviz_trial', dirlist=kubeviz_dir, /noprint 
+findpro, 'kubeviz', dirlist=kubeviz_dir, /noprint 
 instr_file = kubeviz_dir[0]+'doc/instructions.txt'
 
 h = 'Kubeviz version: ' + state.version
@@ -12221,7 +12219,7 @@ end
 ; main program
 ;-----------------------------------------------------------------------
 
-pro kubeviz_trial, datafile, noisefile=noisefile, ext=ext, noise_ext=noise_ext, $ 
+pro kubeviz, datafile, noisefile=noisefile, ext=ext, noise_ext=noise_ext, $ 
              trim=trim, fluxfac=fluxfac, smooth=smooth, $
 	     specsmooth=specsmooth, transpose=transpose, help=help, version=version, $
              vacuum=vacuum, logarithmic=logarithmic, waveunit=waveunit, $
