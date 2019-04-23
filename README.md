@@ -1,5 +1,8 @@
 Acknowledgements:
-This work made use of the KUBEVIZ software which is publicly available at https://github.com/matteofox/kubeviz/
+
+If you use KUBEVIZ in your work please add the following sentence in the ackowledgement section of any resulting publication:
+
+This work made use of the KUBEVIZ software which is publicly available at https://github.com/matteofox/kubeviz/.
 The developement of the KUBEVIZ code code was supported by the Deutsche Forschungsgemeinschaft via Project IDs: 
 WI3871/1-1 and WI3871/1-2
 
