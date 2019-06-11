@@ -1,5 +1,16 @@
-Setting up kubeviz (V1.5)
-******************
+Acknowledgements:
+
+If you use KUBEVIZ in your work please add the following sentence in the ackowledgement section of any resulting publication:
+
+This work made use of the KUBEVIZ software which is publicly available at https://github.com/matteofox/kubeviz/.
+The developement of the KUBEVIZ code code was supported by the Deutsche Forschungsgemeinschaft via Project IDs: 
+WI3871/1-1 and WI3871/1-2
+
+And please cite Fossati et al. (2016) http://adsabs.harvard.edu/abs/2016MNRAS.455.2028F.
+
+*****************
+
+Setting up kubeviz (V2.0)
 
 1. Setup appropriate directory structure to store kubeviz versions
    outside IDL_PATH 
@@ -9,13 +20,13 @@ Setting up kubeviz (V1.5)
 2. Unpack the gzipped tarfile in the directory you have created:
 
    cd kubeviz
-   tar xvfz kubeviz_v1.5.tar.gz
+   tar xvfz kubeviz_v2.0.tar.gz
 
 3. This creates a subdirectory with the specific version number 
-   e.g. kubeviz/v1.3.4 Now link the current version inside IDL_PATH (assumed
+   e.g. kubeviz/v2.0 Now link the current version inside IDL_PATH (assumed
    IDL root directory $IDL_ROOT):
 
-   ln -s kubeviz/v1.5 $IDL_ROOT/kubeviz_current
+   ln -s kubeviz/v2.0 $IDL_ROOT/kubeviz_current
    
    Make sure your IDL_PATH runs recusrsively into the subdirectories 
    (addons/ must be in the IDL_PATH).
@@ -62,8 +73,8 @@ Setting up kubeviz (V1.5)
 
 1) If you see this message:
     
-    [WARNING] ##       This is a 32 bit IDL version.        ##
-    [WARNING] ##   Some features might now work correctly!  ##
+    [WARNING] ##Â Â Â Â Â Â  This is a 32 bit IDL version.Â Â Â Â Â    ##
+    [WARNING] ##Â Â  Some features might now work correctly!Â  ##
    
    There is no reason to worry unless you are trying to load a very large 
    datacube. Almost certainly MUSE datacubes require a 64bit IDL version 
@@ -71,7 +82,7 @@ Setting up kubeviz (V1.5)
 
 2) If you see errors like:
       
-      % Error occurred at: VALID_NUM   line 71     
+      % Error occurred at: VALID_NUMÂ Â Â line 71Â Â Â Â Â 
       % AIRTOVAC: Incorrect number of arguments.
    
    It means you have not updated the Astrolib library since 2012. 
