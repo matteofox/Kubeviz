@@ -2,7 +2,7 @@
 ;#############################################################################
 ;
 ; Copyright (C) 2014-2019, David J. Wilman, Matteo Fossati, Joris Gerssen
-; E-mail: dwilman_at_mpe.mpg.de, mfossati_at_durham.ac.uk
+; E-mail: matteo.fossati_at_durham.ac.uk
 ;
 ; This software is provided as is without any warranty whatsoever.
 ; Permission to use, for non-commercial purposes is granted.
@@ -15,7 +15,7 @@
 ;
 ; NAME: kubeviz
 ; 
-; VERSION: 2.3
+; VERSION: 2.2
 ; 
 ; AUTHORS: David J. Wilman, Matteo Fossati, & Joris Gerssen
 ; 
@@ -85,13 +85,14 @@
 ;           scroll:      (optional) force display of scrollbar in linefit window
 ;           lineset:     (optional) select only one set of lines to fit. Default=0 (selects all lines).
 ;                        1: Ha+[NII]
-;                        2: Hbeta 
-;                        3: [OIII]
-;                        4: [SII]
-;                        5: [OI]
-;                        6: [SIII]
-;   	    	    	 7: [HeI]
-;   	    	    	 8: Lya
+;                        2: [OIII]
+;                        3: [OII]
+;                        4: Hbeta
+;                        5: [SII]
+;                        6: [OI]
+;   	    	    	 7: [SIII]
+;   	    	    	 8: [HeI]
+;                        9: Lya
 ;           debug:       (optional) verbose
 ;           mask_sn_thresh: (optional) S/N (amplitude) threshold for autoflag acceptance of a fit.  Default=3.
 ;           mask_maxvelerr: (optional) velocity (or dispersion) error threshold for autoflag accepatance of a fit. Default=50 km/s.
@@ -207,11 +208,13 @@
 ;              components are present in a given spaxel (see documentation for more details)
 ;              (BETA) User initial guess maps (gaussian) and window parameter
 ;              maps (moments) can be loaded.
+; 11-06-2019 : Release of V2.2
+;              Several bug fixes. Added O2 to the database of lines. Lineset hierarchy has been
+;              re-defined.
 ;
-; BUGS       : Line 3525 (22-08-17) 
-;              Needs to reset the results container but NOT the widgets
+; BUGS         Needs to reset the results container but NOT the widgets
 ;              unless we are definitely running in interactive mode!!
-; TBD:         improve consistency of initial guess maps (switch on/off, load from GUI)
+; FUTURE WORK: improve consistency of initial guess maps (switch on/off, load from GUI)
 ;              improve handling of initial guess maps for gaussian fits
 ;-------------------------------------------------------------------------
 ;-
@@ -415,7 +418,7 @@ common kubeviz_pars, pars
 
 
 state = {  $
-          version: 'K2.2beta',             $  ; version number 
+          version: 'K2.2',                 $  ; version number 
 	  log_lun: -1,                     $  ; log file unit, if -1 print to the terminal
 	  debug: 0L,                       $  ; if set print additional information
           ckms: 299792.458D,               $  ; speed of light in km/s
@@ -852,20 +855,23 @@ linesdb = { $
 	  he1_r  : 6678.152D,   $
           s3_b   : 9068.600D,   $
 	  s3_r   : 9530.600D,   $
+	  o2_b   : 3726.030D,   $
+	  o2_r   : 3728.820D,   $
 	  linesets   : fltarr(25), $    
 	  lines_rest : fltarr(25), $      ; array of all lines
           linenames  : strarr(25), $      ; array of line names
           linefancynames : strarr(25) $
           }
 
-linesdb.linesets = [1,1,1,2,3,3,4,4,5,5,6,6,7,7,8] ;Associate to each line its corresponding lineset
-linesdb.lines_rest = [linesdb.halpha,linesdb.n2_b,linesdb.n2_r,linesdb.hbeta,linesdb.o3_b,linesdb.o3_r, $
+linesdb.linesets = [1,1,1,2,2,3,3,4,5,5,6,6,7,7,8,8,9] ;Associate to each line its corresponding lineset
+linesdb.lines_rest = [linesdb.halpha,linesdb.n2_b,linesdb.n2_r,linesdb.o3_b,linesdb.o3_r, $
+                      linesdb.o2_b,linesdb.o2_r,linesdb.hbeta, $
                       linesdb.s2_b,linesdb.s2_r,linesdb.o1_b,linesdb.o1_r, linesdb.s3_b, linesdb.s3_r,  $
 		      linesdb.he1_b, linesdb.he1_r, linesdb.lyalpha] ;array of all lines
 		      
-linesdb.linenames = ['Ha', 'n2_b', 'n2_r','Hb', 'o3_b', 'o3_r','s2_b', 's2_r','o1_b', 'o1_r','s3_b','s3_r','He1_b','He1_r','Lya']
+linesdb.linenames = ['Ha', 'n2_b', 'n2_r', 'o3_b', 'o3_r','o2_b', 'o2_r','Hb','s2_b', 's2_r','o1_b', 'o1_r','s3_b','s3_r','He1_b','He1_r','Lya']
 
-linesdb.linefancynames = ['Ha', '[NII] blue', '[NII] red','Hb', '[OIII] blue', '[OIII] red','[SII] blue', $
+linesdb.linefancynames = ['Ha', '[NII] blue', '[NII] red', '[OIII] blue', '[OIII] red', '[OII] blue', '[OII] red','Hb','[SII] blue', $
                          '[SII] red','[OI] blue', '[OI] red', '[SIII] blue', '[SIII] red', 'HeI blue', 'HeI red', 'Lya']
 
 pars = { $
@@ -1148,8 +1154,9 @@ if N_elements(linesarr) eq 0 and  not ptr_valid(state.linenames) then return, li
 if state.Nlines eq 0 then mainline = linesdb.halpha else begin
      case 1 of 
        total(strmatch(linesarr, 'Ha'))    eq 1 : mainline = linesdb.halpha 
+       total(strmatch(linesarr, 'o3_r'))  eq 1 : mainline = linesdb.o3_r
+       total(strmatch(linesarr, 'o2_r'))  eq 1 : mainline = linesdb.o2_r
        total(strmatch(linesarr, 'Hb'))    eq 1 : mainline = linesdb.hbeta 
-       total(strmatch(linesarr, 'o3_r'))  eq 1 : mainline = linesdb.o3_r 
        total(strmatch(linesarr, 's2_r'))  eq 1 : mainline = linesdb.s2_r 
        total(strmatch(linesarr, 'o1_b'))  eq 1 : mainline = linesdb.o1_b
        total(strmatch(linesarr, 'He1_b')) eq 1 : mainline = linesdb.he1_b
@@ -4258,7 +4265,9 @@ while total(badfit*Hope) gt 1 and Niter ge 0 do begin
       if Nfitnow gt 0 then break
    endfor
    
-   print, ii, Nfitnow, Niter
+   ;HERE TO BE FIXED
+   kubeviz_statuslinecore,  /clear
+   kubeviz_statuslinecore, '[PROGRES] Running step with '+kubeviz_str(ii)+' neighbours, for '+kubeviz_str(Nfitnow)+' pixels.',0 
    
    for i=0L,Nfitnow-1 do begin
       
@@ -4316,6 +4325,8 @@ state.col  = colstart
 state.row  = rowstart 
 
 Nbad_final = total((badspaxels eq 0 and flag gt 0), /integer)
+kubeviz_statuslinecore, /close
+printf, state.log_lun, ''
 printf, state.log_lun, '[KUBEVIZ] The fit was improved for '+strcompress(Nbad_init-Nbad_final, /re)+' spaxels.'
   
 end
